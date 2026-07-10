@@ -1,0 +1,5 @@
+- clone the project with fine-grain-token
+- scaffold backend with uv.
+- scaffold frontend with pnpm -> `pnpm create vue`
+- add axios.
+- add start.sh
