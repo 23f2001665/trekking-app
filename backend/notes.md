@@ -62,3 +62,48 @@ The first goal I set in my application is make the CORS work properly, so that I
 
 I used the best available library for password hashing `argon2-cffi` which is a wrapper around the `argon2` library. It is the best available library for password hashing. Just two simple functions in `extensions.py` to hash and verify passwords with *exception handling*.
 
+### Frontend Configuration
+
+Nearly everything is already done by vite, so I just need to add a few things like `axios`.
+
+## Project Logic
+
+### Database Requirements & Design
+
+Let's thing about some design which fulfils the requirements of the project as mentioned in the project document. The requirements are as follows:
+
+- **Admin**: Just controlling everything so nothing special here, just a simple user with admin role or maybe some other way to identify the admin user.
+- **Trekker(Normal User)**: Just login and then see the list of treks and then book a trek.
+- **TrekStaff**: See all the assigned treks and then see the list of trekkers and then approve or reject their booking request.
+- **Trek**: Just a simple model with few attributes like name, description, start date, end date, location, price, etc.
+- **Booking**: Just a simple model with few attributes like trek_id, trekker_id, status, etc.
+
+A few new things I learned here:
+
+- How to encapusulate enums with the models itself.
+- It is not necessary that a relationship should be bi-directional, it can be uni-directional as well.
+- I defined a Costume MixinClass `ExportMixin` to export the model data to a dictionary, which can be used to send the data to the frontend. It is a very useful mixin class which can be used in any user facing model.
+- How to keep the logic simple, which I usually overlook.
+
+### Login & Logout Logic
+
+```
+Login
+    ↓
+Verify password
+    ↓
+session["user_id"] = 42
+    ↓
+Redis stores session data
+    ↓
+Browser receives session cookie
+    ↓
+Every request sends that cookie
+    ↓
+Flask loads the correct session
+    ↓
+session["user_id"] == 42
+    ↓
+Load User(id=42) from the database
+```
+

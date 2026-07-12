@@ -1,47 +1,72 @@
-from .extensions import celery, db
-from .models import User
+from .extensions import celery, db, mail, Message
+from .export import export_data, get_daily_mail_data, get_monthly_report_data
+from .models import User, UserRoleName
+from flask import render_template, current_app as app
+from sqlalchemy import select
 
-@celery.task(name="add", bind=True)
-def add(self, x, y):
-    """A simple Celery task to add two numbers."""
+@celery.task(name="send_report", bind=True, max_retries=3, default_retry_delay=3)
+def send_report(self, user_id):
+    """A Celery task to send a report to a user."""
     try:
-        if x == 0 or y == 0:
-            raise ValueError("Both x and y must be non-zero.")
-    except ValueError as e:
-        # Log the error or handle it as needed
-        print(f"Error in add task: {e}")
-        self.retry(exc=e, countdown=5, max_retries=3)  # Retry after 5 seconds, up to 3 times
-    return x + y
-
-@celery.task(name="task_create_user", bind=True)
-def _create_user(self, username):
-    """A Celery task to create a new user in the database."""
-    try:
-        # Create a new user instance
-        new_user = User(username=username)
-        db.session.add(new_user)
-        db.session.commit()
-        
+        export_result = export_data(app, user_id)
+        return export_result
     except Exception as e:
-        # Log the error or handle it as needed
-        print(f"Error in create_user task: {e}")
-        self.retry(exc=e, countdown=5, max_retries=3)  # Retry after 5 seconds, up to 3 times
-    return f"User '{username}' created successfully."
+        print(f"Error generating report: {e}")
+        raise self.retry(exc=e, countdown=3)
 
-@celery.task(name="print_hello")
-def print_hello():
-    """A simple Celery task to print a hello message."""
-    print("Hello from Celery!")
-    return "Hello from Celery!"
+@celery.task(name="send_daily_email", bind=True)     
+def send_daily_email(self):
+    """
+    Send a daily email to the users with upcoming treks and bookings for the next day.
+    """
+    for user_id in db.session.scalars(select(User.id).where(User.role == UserRoleName.TREKKER)).all():
+        rows = get_daily_mail_data(user_id)
+        if not rows:
+            print(f"No upcoming treks for user_id: {user_id}")
+            continue  # No upcoming treks for tomorrow
 
-@celery.task(name="send_email", bind=True)
-def send_email(self, recipient, subject, body):
-    """A Celery task to send an email."""
+        # Fetch user email
+        user = db.session.get(User, user_id)
+        if not user:
+            print(f"User with id {user_id} not found.")
+            continue # User not found
+
+        # Send email using Celery task
+        msg = Message(
+            subject="Upcoming Treks and Bookings for Tomorrow",
+            sender=app.config['MAIL_DEFAULT_SENDER'],
+            recipients=[user.email],
+            html=render_template('daily_email.html', user=user, treks=rows)
+        )
+        try:
+            mail.send(msg)
+        except Exception as e:
+            print(f"Error sending email to user {user_id}: {e}")
+    print("Mail sending task completed.")
+
+# send montly report to admin via email
+@celery.task(name="send_monthly_email", bind=True)
+def send_monthly_email(self):
+    """
+    Send a monthly email to the admin with all the treks and bookings for the month.
+    """
+    # Fetch admin email
+    admin_user = db.session.scalars(select(User).where(User.role == UserRoleName.ADMIN)).first()
+    if not admin_user:
+        print("Admin user not found.")
+        return  # Admin user not found
+
+    # Generate monthly report data
+    report_data, year_month = get_monthly_report_data()
+
+    # Send email using Celery task
+    msg = Message(
+        subject="Monthly Trekking Report",
+        sender=app.config['MAIL_DEFAULT_SENDER'],
+        recipients=[admin_user.email],
+        html=render_template('monthly_email.html', **report_data, year_month=year_month)
+    )
     try:
-        
-        pass
+        mail.send(msg)
     except Exception as e:
-        # Log the error or handle it as needed
-        print(f"Error in send_email task: {e}")
-        self.retry(exc=e, countdown=5, max_retries=3)  # Retry after 5 seconds, up to 3 times
-    return f"Email sent to {recipient} successfully."
+        print(f"Error sending monthly report email to admin: {e}")

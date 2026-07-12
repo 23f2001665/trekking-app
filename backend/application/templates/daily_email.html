@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Trek Reminder</title>
+</head>
+<body>
+
+    <h2>Hello {{ user.fullname }},</h2>
+
+    {% if treks %}
+
+        <p>You have the following trek(s) starting tomorrow.</p>
+
+        {% for trek in treks %}
+
+        <hr>
+
+        <table border="1" cellpadding="6" cellspacing="0">
+            <tr>
+                <th align="left">Trek</th>
+                <td>{{ trek.trek_title }}</td>
+            </tr>
+            <tr>
+                <th align="left">Location</th>
+                <td>{{ trek.trek_location }}</td>
+            </tr>
+            <tr>
+                <th align="left">Start Date</th>
+                <td>{{ trek.trek_start_date.strftime("%d %b %Y") }}</td>
+            </tr>
+            <tr>
+                <th align="left">End Date</th>
+                <td>{{ trek.trek_end_date.strftime("%d %b %Y") }}</td>
+            </tr>
+        </table>
+
+        {% endfor %}
+
+        <h3>Instructions</h3>
+
+        <ul>
+            <li>Reach the meeting point at least 30 minutes early.</li>
+            <li>Carry a valid ID proof.</li>
+            <li>Bring enough drinking water and light snacks.</li>
+            <li>Wear suitable trekking shoes and comfortable clothing.</li>
+            <li>Follow all instructions given by the trek staff.</li>
+        </ul>
+
+    {% else %}
+
+        <p>You have no upcoming treks scheduled for tomorrow.</p>
+
+    {% endif %}
+
+    <p>
+        Regards,<br>
+        Trek Management Team
+    </p>
+
+</body>
+</html>

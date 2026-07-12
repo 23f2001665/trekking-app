@@ -1,8 +1,12 @@
 from celery.schedules import crontab
 
 beat_schedule = {
-    'create_user_every_minute': {
-        'task': 'print_hello',
-        'schedule': crontab(minute='*/1')  # Run every minute
-    }
+    'send_daily_email': {
+        'task': 'send_daily_email',
+        'schedule': crontab(minute='0', hour='0')  # Run every day at 00:00 (midnight)
+    },
+    'send_monthly_email': {
+        'task': 'send_monthly_email',
+        'schedule': crontab(minute='0', hour='0', day_of_month='1')  # Run on the first day of every month at 00:00
+    },
 }

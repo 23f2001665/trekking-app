@@ -262,3 +262,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+
+# Celery Files
+celerybeat-schedule*

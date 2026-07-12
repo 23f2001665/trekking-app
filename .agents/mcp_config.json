@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "yaak": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://127.0.0.1:64343/mcp"]
+    }
+  }
+}
+

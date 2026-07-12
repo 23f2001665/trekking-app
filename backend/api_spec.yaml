@@ -1,0 +1,1117 @@
+openapi: "3.0.3"
+info:
+  title: Trekking App API
+  description: Backend API for a trekking application — manages users, treks, bookings, and summary analytics.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:5000
+    description: Development server
+
+paths:
+  # ────────────────────────────── AUTH ──────────────────────────────
+  /login:
+    post:
+      tags: [Auth]
+      summary: Authenticate user and create session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user_info:
+                    $ref: "#/components/schemas/UserInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Clear session and logout
+      responses:
+        "200":
+          description: Logout successful
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /register:
+    post:
+      tags: [Auth]
+      summary: Register a new trekker user only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+              required: [email, password, first_name]
+      responses:
+        "201":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user_info:
+                    $ref: "#/components/schemas/UserInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already registered
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /user_info:
+    get:
+      tags: [Auth]
+      summary: Get logged-in user's information (cached 5 min)
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_info:
+                    $ref: "#/components/schemas/UserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Auth]
+      summary: Update logged-in user's name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+      responses:
+        "200":
+          description: User info updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user_info:
+                    $ref: "#/components/schemas/UserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ────────────────────────────── USERS ─────────────────────────────
+  /users/all:
+    get:
+      tags: [Users]
+      summary: Get all users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /users/create_staff:
+    post:
+      tags: [Users]
+      summary: Create a new staff member (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+              required: [email, password, first_name]
+      responses:
+        "201":
+          description: Staff member created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/UserInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already exists
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /users/{user_id}:
+    get:
+      tags: [Users]
+      summary: Get a specific user by ID (admin only) — for viewing other users' info
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_info:
+                    $ref: "#/components/schemas/UserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Users]
+      summary: Update a specific user's name (admin only)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+      responses:
+        "200":
+          description: User updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /users/{user_id}/deactivate:
+    post:
+      tags: [Users]
+      summary: Deactivate a user (admin only) — cannot deactivate admin
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User deactivated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /users/{user_id}/activate:
+    post:
+      tags: [Users]
+      summary: Activate a user (admin only)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User activated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /users/trek/{trek_id}:
+    get:
+      tags: [Users]
+      summary: Get all users who booked a specific trek (admin and assigned trek staff only)
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/trek_staff/{staff_id}:
+    get:
+      tags: [Users]
+      summary: Get all users across treks assigned to a specific staff member (admin and trek staff only)
+      parameters:
+        - name: staff_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ────────────────────────────── TREKS ─────────────────────────────
+  /treks/all:
+    get:
+      tags: [Treks]
+      summary: List all treks (admin/trekker) or assigned treks (trek staff) — cached 5 min
+      responses:
+        "200":
+          description: List of treks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  treks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TrekInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /treks/create:
+    post:
+      tags: [Treks]
+      summary: Create a new trek (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTrekInput"
+      responses:
+        "201":
+          description: Trek created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /treks/{trek_id}:
+    get:
+      tags: [Treks]
+      summary: Get trek details (cached 5 min) — staff can only see assigned treks
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trek info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trek_info:
+                    $ref: "#/components/schemas/TrekInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Treks]
+      summary: Update trek fields except status, staff_id, and created_at (admin and assigned staff)
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                location:
+                  type: string
+                capacity:
+                  type: integer
+                price:
+                  type: number
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          description: Trek updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /treks/{trek_id}/status:
+    patch:
+      tags: [Treks]
+      summary: Update trek status (open/complete/cancelled) — admin and assigned staff
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [open, completed, cancelled]
+              required: [status]
+      responses:
+        "200":
+          description: Trek status updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /treks/{trek_id}/assign_staff:
+    patch:
+      tags: [Treks]
+      summary: Assign different staff to a trek (admin only)
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                staff_id:
+                  type: integer
+              required: [staff_id]
+      responses:
+        "200":
+          description: Staff assigned
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ────────────────────────────── BOOKINGS ──────────────────────────
+  /bookings/all:
+    get:
+      tags: [Bookings]
+      summary: List all bookings — admin sees all, staff sees their treks, trekker sees own
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BookingInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /bookings/create:
+    post:
+      tags: [Bookings]
+      summary: Create a booking (trekker only) — validates trek is open, not full, not duplicate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trek_id:
+                  type: integer
+                notes:
+                  type: string
+              required: [trek_id]
+      responses:
+        "201":
+          description: Booking created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /bookings/{booking_id}:
+    get:
+      tags: [Bookings]
+      summary: Get a booking by ID — scope-restricted by role
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  booking_info:
+                    $ref: "#/components/schemas/BookingInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Bookings]
+      summary: Update booking — cancel or edit notes (scope-restricted by role)
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [cancelled]
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Booking updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /bookings/trek/{trek_id}:
+    get:
+      tags: [Bookings]
+      summary: Get all bookings for a specific trek (admin and assigned staff)
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BookingInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /bookings/user/{user_id}:
+    get:
+      tags: [Bookings]
+      summary: Get all bookings for a specific user — scope-restricted by role
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BookingInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ────────────────────────────── SUMMARY ───────────────────────────
+  /summary/users:
+    get:
+      tags: [Summary]
+      summary: Get user summary counts (total, active, inactive, by role) — admin only
+      responses:
+        "200":
+          description: User summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /summary/treks:
+    get:
+      tags: [Summary]
+      summary: Get trek summary by status — admin sees all, staff sees only assigned
+      responses:
+        "200":
+          description: Trek summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrekSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /summary/bookings:
+    get:
+      tags: [Summary]
+      summary: Get booking summary — scoped by role
+      responses:
+        "200":
+          description: Booking summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /summary/trek/{trek_id}/users:
+    get:
+      tags: [Summary]
+      summary: Get active/inactive user count for a trek (admin and assigned staff)
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trek user summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrekUserSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /summary/trek/{trek_id}/bookings:
+    get:
+      tags: [Summary]
+      summary: Get booking summary for a specific trek (admin and assigned staff)
+      parameters:
+        - name: trek_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trek booking summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /summary/user/{user_id}/bookings:
+    get:
+      tags: [Summary]
+      summary: Get booking summary for a specific user (admin and trek staff)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User booking summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /summary/export:
+    get:
+      tags: [Summary]
+      summary: Request async CSV export of own booking history via Celery (trekker only)
+      responses:
+        "202":
+          description: Export initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task_id:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /summary/export/{task_id}:
+    get:
+      tags: [Summary]
+      summary: Poll export task status or download CSV
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task status (or CSV on SUCCESS)
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                  status:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+components:
+  schemas:
+    UserInfo:
+      type: object
+      properties:
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          type: string
+          enum: [admin, trekker, trek_staff]
+
+    TrekInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        capacity:
+          type: integer
+        price:
+          type: number
+        status:
+          type: string
+          enum: [draft, open, completed, cancelled]
+        location:
+          type: string
+        staff_user_id:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        seats_booked:
+          type: integer
+        seats_available:
+          type: integer
+        is_draft:
+          type: boolean
+        is_open:
+          type: boolean
+        is_completed:
+          type: boolean
+        is_cancelled:
+          type: boolean
+        is_full:
+          type: boolean
+
+    BookingInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+        trek_id:
+          type: integer
+        trekker_user_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        price_at_booking:
+          type: number
+        status:
+          type: string
+          enum: [booked, cancelled]
+        notes:
+          type: string
+          nullable: true
+        is_booked:
+          type: boolean
+
+    CreateTrekInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        price:
+          type: number
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        staff_id:
+          type: integer
+      required: [title, description, location, capacity, price, start_date, end_date]
+
+    UserSummary:
+      type: object
+      properties:
+        user_summary:
+          type: object
+          properties:
+            total_users:
+              type: integer
+            active_users:
+              type: integer
+            inactive_users:
+              type: integer
+            active_trekkers:
+              type: integer
+            inactive_trekkers:
+              type: integer
+            active_staff:
+              type: integer
+            inactive_staff:
+              type: integer
+            admins:
+              type: integer
+
+    TrekSummary:
+      type: object
+      properties:
+        treks_summary:
+          type: object
+          properties:
+            total_treks:
+              type: integer
+            draft_treks:
+              type: integer
+            open_treks:
+              type: integer
+            completed_treks:
+              type: integer
+            cancelled_treks:
+              type: integer
+
+    TrekUserSummary:
+      type: object
+      properties:
+        trek_users_summary:
+          type: object
+          properties:
+            active_users:
+              type: integer
+            inactive_users:
+              type: integer
+
+    BookingSummary:
+      type: object
+      properties:
+        total_bookings:
+          type: integer
+        booked_bookings:
+          type: integer
+        cancelled_bookings:
+          type: integer
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    Unauthorized:
+      description: Not authenticated
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    Forbidden:
+      description: Forbidden (wrong role or inactive account)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string

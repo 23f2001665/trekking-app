@@ -3,7 +3,7 @@ from argon2.exceptions import VerifyMismatchError
 from celery import Celery
 from flask_caching import Cache
 from flask_cors import CORS
-from flask_mail import Mail
+from flask_mail import Mail, Message
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event
@@ -21,11 +21,7 @@ session = Session()
 # Celery Configutation
 
 def init_celery(app):
-    # print(app.extended_config.__dict__, type(app.extended_config.__dict__))
     celery.conf.update(app.extended_config.__dict__)
-    # print("Celery configuration:")
-    # for key, value in celery.conf.items():
-    #     print(f"  {key}: {value}")
 
     class FlaskTask(celery.Task):
         def __call__(self, *args, **kwargs):

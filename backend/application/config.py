@@ -9,18 +9,17 @@ REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = int(os.getenv('REDIS_PORT'))
 
 def get_redis_client(db_number=0):
-    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=db_number, decode_responses=True)
+    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=db_number, decode_responses=False)
 
 class Config:
+    # Admin user configuration variables
+    ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'develop.test.0.0.0.0@gmail.com')
+    ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'Abcd@123')
+    ADMIN_FIRST_NAME = os.getenv('ADMIN_FIRST_NAME', 'Admin')
+    ADMIN_LAST_NAME = os.getenv('ADMIN_LAST_NAME', 'User')
+
     # Flask configuration variables
     DEBUG = True
-
-    # SQLAlchemy configuration variables
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///vma.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = False
-
-   
 
     # Cache configuration variables
     CACHE_TYPE = 'RedisCache'
@@ -62,6 +61,13 @@ class Config:
     SESSION_REDIS = get_redis_client(db_number=0)  # Redis client for Flask-Session
     SESSION_REFRESH_EACH_REQUEST = True  # Refresh session expiration on each request
     PERMANENT_SESSION_LIFETIME = 60  # Session lifetime in seconds 
+
+
+    # SQLAlchemy configuration variables
+    DATABASE_PATH = os.getenv('DATABASE_PATH', '/home/himanshu/Documents/IITM/mad2/project/trekking-app/backend/')
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///vma.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = True
 
     # Random key to test extended configuration
     himanshu=1
