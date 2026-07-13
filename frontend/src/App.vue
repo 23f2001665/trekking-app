@@ -1,12 +1,15 @@
+<!-- App.vue -->
 <script setup>
-  console.log("App.vue component loaded");
+import { Toaster } from "vue-sonner";
+import "vue-sonner/style.css";
 </script>
 
 <template>
-  <header id="application-header">
-    <h1 id="main-heading">Welcome to the Trekking App</h1>
-  </header>
-  <RouterView />
+    <Toaster 
+        :duration="3000"
+        :position="'top-center'"
+        />
+    <main class="page-container">
+        <RouterView />
+    </main>
 </template>
-
-<style scoped></style>

@@ -67,7 +67,7 @@ class Config:
     DATABASE_PATH = os.getenv('DATABASE_PATH', '/home/himanshu/Documents/IITM/mad2/project/trekking-app/backend/')
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///vma.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False
 
     # Random key to test extended configuration
     himanshu=1

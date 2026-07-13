@@ -79,7 +79,6 @@ def register():
     return jsonify({'message': 'Registration successful', 'user_info': exports}), 201
 
 @auth_bp.route('/user_info', methods=['GET'])
-@cache.cached(timeout=300, key_prefix=lambda: f'user_info_{session.get("user", {}).get("id")}')  # Cache the result for 5 minutes
 def get_user_info():
     user = session.get('user')
     if not user:
